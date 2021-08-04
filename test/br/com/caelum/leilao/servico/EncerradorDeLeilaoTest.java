@@ -2,23 +2,22 @@ package br.com.caelum.leilao.servico;
 
 import br.com.caelum.leilao.builder.CriadorDeLeilao;
 import br.com.caelum.leilao.dominio.Leilao;
-import br.com.caelum.leilao.infra.dao.LeilaoDao;
+import br.com.caelum.leilao.repositorio.RepositorioDeLeiloes;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class EncerradorDeLeilaoTest {
 
-    private LeilaoDao dao;
+    private RepositorioDeLeiloes dao;
 
     @Before
     public void init() {
-        this.dao = mock(LeilaoDao.class);
+        this.dao = mock(RepositorioDeLeiloes.class);
     }
 
     @Test
@@ -79,5 +78,35 @@ public class EncerradorDeLeilaoTest {
         assertEquals(encerrador.getTotalEncerrados(), 0);
         assertFalse(leilao1.isEncerrado());
         assertFalse(leilao2.isEncerrado());
+    }
+
+    @Test
+    public void semLeiloes() {
+
+        when(dao.correntes()).thenReturn(new ArrayList<>());
+
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        encerrador.encerra();
+
+        assertEquals(0, encerrador.getTotalEncerrados());
+    }
+
+    @Test
+    public void deveAtualizarLeiloesEncerrados() {
+
+        Calendar antiga = Calendar.getInstance();
+        antiga.set(1999, Calendar.JANUARY, 3);
+
+        Leilao leilao1 = new CriadorDeLeilao()
+                .para("tv")
+                .naData(antiga)
+                .constroi();
+
+        when(dao.correntes()).thenReturn(Arrays.asList(leilao1));
+
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        encerrador.encerra();
+
+        verify(dao, times(1)).atualiza(leilao1);
     }
 }

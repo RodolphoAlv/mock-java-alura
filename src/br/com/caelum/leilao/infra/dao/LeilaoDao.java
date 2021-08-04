@@ -132,27 +132,4 @@ public class LeilaoDao {
 	}
 	
 	public int x() { return 10; }
-
-	public void kamikaze() {
-		try {
-			String sql = "DELETE FROM LEILAO;";
-			PreparedStatement ps = conexao.prepareStatement(sql);
-			ps.execute();
-
-			sql = "DELETE FROM LANCES;";
-			ps = conexao.prepareStatement(sql);
-			ps.execute();
-
-			sql = "DELETE FROM PAGAMENTO;";
-			ps = conexao.prepareStatement(sql);
-			ps.execute();
-
-			sql = "DELETE FROM USUARIO;";
-			ps = conexao.prepareStatement(sql);
-			ps.execute();
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
 }
