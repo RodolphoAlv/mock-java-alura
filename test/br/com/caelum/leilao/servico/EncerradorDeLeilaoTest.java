@@ -166,14 +166,12 @@ public class EncerradorDeLeilaoTest {
 
         when(dao.correntes()).thenReturn(Arrays.asList(leilao1, leilao2));
 
-        doThrow(new RuntimeException()).when(dao).atualiza(leilao1);
-        doThrow(new RuntimeException()).when(dao).atualiza(leilao2);
+        doThrow(new RuntimeException()).when(dao).atualiza(any(Leilao.class));
 
         EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
 
         encerrador.encerra();
 
-        verify(enviador, never()).envia(leilao1);
-        verify(enviador, never()).envia(leilao2);
+        verify(enviador, never()).envia(any(Leilao.class));
     }
 }
