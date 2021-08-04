@@ -78,6 +78,9 @@ public class EncerradorDeLeilaoTest {
         assertEquals(encerrador.getTotalEncerrados(), 0);
         assertFalse(leilao1.isEncerrado());
         assertFalse(leilao2.isEncerrado());
+
+        verify(dao, never()).atualiza(leilao1);
+        verify(dao, never()).atualiza(leilao2);
     }
 
     @Test
