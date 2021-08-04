@@ -16,17 +16,23 @@ public class EncerradorDeLeilaoTest {
 
     private RepositorioDeLeiloes dao;
     private EnviadorDeEmail enviador;
+    private Calendar antiga;
+    private Calendar ontem;
 
     @Before
     public void init() {
         this.dao = mock(RepositorioDeLeiloes.class);
         this.enviador = mock(EnviadorDeEmail.class);
+
+        this.antiga = Calendar.getInstance();
+        this.antiga.set(1999, Calendar.JANUARY, 20);
+
+        this.ontem = Calendar.getInstance();
+        this.ontem.add(Calendar.DAY_OF_MONTH, -1);
     }
 
     @Test
     public void deveEncerrarLeiloesQueComecaramUmaSemanaAntes() {
-        Calendar antiga = Calendar.getInstance();
-        antiga.set(1999, Calendar.JANUARY, 20);
 
         Leilao leilao1 = new CriadorDeLeilao()
                 .para("tv")
@@ -62,8 +68,6 @@ public class EncerradorDeLeilaoTest {
 
     @Test
     public void naoEncerraLeiloesComecadosOntem() {
-        Calendar ontem = Calendar.getInstance();
-        ontem.add(Calendar.DAY_OF_MONTH, -1);
 
         Leilao leilao1 = new CriadorDeLeilao()
                 .para("tv")
@@ -107,9 +111,6 @@ public class EncerradorDeLeilaoTest {
     @Test
     public void deveAtualizarLeiloesEncerrados() {
 
-        Calendar antiga = Calendar.getInstance();
-        antiga.set(1999, Calendar.JANUARY, 3);
-
         Leilao leilao1 = new CriadorDeLeilao()
                 .para("tv")
                 .naData(antiga)
@@ -121,5 +122,58 @@ public class EncerradorDeLeilaoTest {
         encerrador.encerra();
 
         verify(dao, times(1)).atualiza(leilao1);
+    }
+
+    @Test
+    public void deveContinuarAExecucaoMesmoQuandoODaoFalha() {
+
+        Leilao leilao1 = new CriadorDeLeilao()
+                .para("tv")
+                .naData(antiga)
+                .constroi();
+
+        Leilao leilao2 = new CriadorDeLeilao()
+                .para("geladeira")
+                .naData(antiga)
+                .constroi();
+
+        when(dao.correntes()).thenReturn(Arrays.asList(leilao1, leilao2));
+
+        // Criando uma exception do além
+        doThrow(new RuntimeException()).when(dao).atualiza(leilao1);
+
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
+        encerrador.encerra();
+
+        verify(dao).atualiza(leilao2);
+        verify(enviador).envia(leilao2);
+
+        verify(enviador, times(0)).envia(leilao1);
+
+    }
+
+    @Test
+    public void nuncaInvocandoOMetodoEnviarEmail() {
+        Leilao leilao1 = new CriadorDeLeilao()
+                .para("tv")
+                .naData(antiga)
+                .constroi();
+
+        Leilao leilao2 = new CriadorDeLeilao()
+                .para("geladeira")
+                .naData(antiga)
+                .constroi();
+
+        when(dao.correntes()).thenReturn(Arrays.asList(leilao1, leilao2));
+
+        doThrow(new RuntimeException()).when(dao).atualiza(leilao1);
+        doThrow(new RuntimeException()).when(dao).atualiza(leilao2);
+
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
+
+        encerrador.encerra();
+
+        verify(enviador, never()).envia(leilao1);
+        verify(enviador, never()).envia(leilao2);
     }
 }
