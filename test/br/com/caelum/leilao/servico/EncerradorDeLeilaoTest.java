@@ -5,6 +5,7 @@ import br.com.caelum.leilao.dominio.Leilao;
 import br.com.caelum.leilao.repositorio.RepositorioDeLeiloes;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.*;
 
@@ -14,10 +15,12 @@ import static org.mockito.Mockito.*;
 public class EncerradorDeLeilaoTest {
 
     private RepositorioDeLeiloes dao;
+    private EnviadorDeEmail enviador;
 
     @Before
     public void init() {
         this.dao = mock(RepositorioDeLeiloes.class);
+        this.enviador = mock(EnviadorDeEmail.class);
     }
 
     @Test
@@ -42,12 +45,19 @@ public class EncerradorDeLeilaoTest {
 
         when(dao.correntes()).thenReturn(leiloesAntigos);
 
-        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
         encerrador.encerra();
 
         assertEquals(2, encerrador.getTotalEncerrados());
         assertTrue(leilao1.isEncerrado());
         assertTrue(leilao2.isEncerrado());
+
+        InOrder inOrder = inOrder(dao, enviador);
+        inOrder.verify(dao).atualiza(leilao1);
+        inOrder.verify(enviador).envia(leilao1);
+
+        inOrder.verify(dao).atualiza(leilao2);
+        inOrder.verify(enviador).envia(leilao2);
     }
 
     @Test
@@ -72,7 +82,7 @@ public class EncerradorDeLeilaoTest {
 
         when(dao.correntes()).thenReturn(leiloesDeOntem);
 
-        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
         encerrador.encerra();
 
         assertEquals(encerrador.getTotalEncerrados(), 0);
@@ -88,7 +98,7 @@ public class EncerradorDeLeilaoTest {
 
         when(dao.correntes()).thenReturn(new ArrayList<>());
 
-        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
         encerrador.encerra();
 
         assertEquals(0, encerrador.getTotalEncerrados());
@@ -107,7 +117,7 @@ public class EncerradorDeLeilaoTest {
 
         when(dao.correntes()).thenReturn(Arrays.asList(leilao1));
 
-        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao);
+        EncerradorDeLeilao encerrador = new EncerradorDeLeilao(dao, enviador);
         encerrador.encerra();
 
         verify(dao, times(1)).atualiza(leilao1);
